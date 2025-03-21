@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>염서준씨의 블로그</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .post-list, .popular-posts, .categories {
+            list-style: none;
+            padding: 0;
+        }
+        .post-list li, .popular-posts li {
+            background: #ddd;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .like-button, .vote-button, .share-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .stats {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .comments {
+            margin-top: 20px;
+        }
+        .comment {
+            background: #eee;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .image-preview {
+            max-width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>멋있는 염서준의 블로그</h1>
+</header>
+
+<div class="container">
+    <h2>📝 새 게시글 작성</h2>
+    <input type="text" id="postTitle" placeholder="제목 입력...">
+    <input type="text" id="postCategory" placeholder="카테고리 입력...">
+    <textarea id="postContent" placeholder="내용 입력..."></textarea>
+    <input type="file" id="postImage" accept="image/*" onchange="previewImage(event)">
+    <img id="imagePreview" class="image-preview">
+    <button onclick="addPost()">게시글 추가</button>
+
+    <h2>📌 게시글 목록</h2>
+    <ul class="post-list" id="postList"></ul>
+    <button onclick="prevPage()">이전 페이지</button>
+    <button onclick="nextPage()">다음 페이지</button>
+
+    <h2>🔥 인기 게시글</h2>
+    <ul class="popular-posts" id="popularPosts"></ul>
+
+    <h2>📂 카테고리</h2>
+    <ul class="categories" id="categoryList"></ul>
+
+    <h2>📊 방문자 통계</h2>
+    <p class="stats">방문자 수: <span id="visitorCount">0</span></p>
+</div>
+
+<script>
+    let posts = JSON.parse(localStorage.getItem("posts")) || [];
+    let visitorCount = localStorage.getItem("visitorCount") || 0;
+    let currentPage = 1;
+    let postsPerPage = 5;
+    visitorCount++;
+    localStorage.setItem("visitorCount", visitorCount);
+    document.getElementById("visitorCount").textContent = visitorCount;
+
+    function previewImage(event) {
+        let reader = new FileReader();
+        reader.onload = function() {
+            let imagePreview = document.getElementById("imagePreview");
+            imagePreview.src = reader.result;
+            imagePreview.style.display = "block";
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    function addPost() {
+        let title = document.getElementById("postTitle").value.trim();
+        let category = document.getElementById("postCategory").value.trim();
+        let content = document.getElementById("postContent").value.trim();
+        let imageSrc = document.getElementById("imagePreview").src;
+        if (title === "" || category === "" || content === "") {
+            alert("제목, 내용, 카테고리를 입력하세요!");
+            return;
+        }
+        let newPost = { id: posts.length + 1, title, category, content, image: imageSrc, likes: 0, votes: 0, comments: [] };
+        posts.push(newPost);
+        localStorage.setItem("posts", JSON.stringify(posts));
+        document.getElementById("postTitle").value = "";
+        document.getElementById("postCategory").value = "";
+        document.getElementById("postContent").value = "";
+        document.getElementById("postImage").value = "";
+        document.getElementById("imagePreview").style.display = "none";
+        renderPostList();
+        renderCategories();
+    }
+
+    function renderPostList() {
+        let postList = document.getElementById("postList");
+        postList.innerHTML = "";
+        let start = (currentPage - 1) * postsPerPage;
+        let end = start + postsPerPage;
+        let paginatedPosts = posts.slice(start, end);
+        paginatedPosts.forEach(post => {
+            let li = document.createElement("li");
+            li.innerHTML = `<strong>${post.title}</strong><br>${post.content}<br>` +
+                           (post.image ? `<img src='${post.image}' style='max-width:100px;'><br>` : "") +
+                           `<button class='like-button' onclick='likePost(${post.id})'>❤️ ${post.likes}</button> ` +
+                           `<button class='vote-button' onclick='votePost(${post.id})'>🗳️ ${post.votes}</button> ` +
+                           `<button class='share-button' onclick='sharePost(${post.id})'>📤 공유</button>`;
+            postList.appendChild(li);
+        });
+    }
+
+    function nextPage() {
+        if (currentPage * postsPerPage < posts.length) {
+            currentPage++;
+            renderPostList();
+        }
+    }
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderPostList();
+        }
+    }
+
+    window.onload = function() {
+        renderPostList();
+        renderCategories();
+    }
+</script>
+
+</body>
+</html>
